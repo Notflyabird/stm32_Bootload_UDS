@@ -27,6 +27,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "aes_cmac.h"
+#include "boot_jump.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -96,7 +97,7 @@ int main(void)
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
   CAN_Filter_Config();
-  uint8_t tx_data[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+  uint8_t tx_data[8] = {0xFF, 0xFF, 0xFF, 0xFF,0xFF, 0xFF, 0xFF, 0xFF};
   HAL_UART_Transmit(&huart1, tx_data, sizeof(tx_data), 0xFFFF);
   /* USER CODE END 2 */
 
@@ -113,6 +114,7 @@ int main(void)
     HAL_IWDG_Refresh(&hiwdg);  //watch dog 500ms timeout
     HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin); // LED翻转
     HAL_Delay(200); // 延时200毫秒
+    Boot_JumpToApplication();
   }
   /* USER CODE END 3 */
 }
