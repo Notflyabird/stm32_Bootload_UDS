@@ -28,6 +28,8 @@
 /* USER CODE BEGIN Includes */
 #include "aes_cmac.h"
 #include "boot_jump.h"
+#include "uds_port.h"
+#include "uds_service.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -113,8 +115,8 @@ int main(void)
     // CAN_Receive_and_Reply();
     HAL_IWDG_Refresh(&hiwdg);  //watch dog 500ms timeout
     HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin); // LED翻转
-    HAL_Delay(200); // 延时200毫秒
-    Boot_JumpToApplication();
+    HAL_Delay(100); // 延时200毫秒
+    // Boot_JumpToApplication();
   }
   /* USER CODE END 3 */
 }
