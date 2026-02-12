@@ -1,7 +1,7 @@
 #include "SID27_SecurityAccess.h"
 #include "service_cfg.h"
 #include "uds_service.h"
-#include "stm32mp1xx_hal.h"
+#include "stm32f1xx_hal.h"
 #include <stdlib.h>
 
 #define UNLOCKKEY					0x00000000

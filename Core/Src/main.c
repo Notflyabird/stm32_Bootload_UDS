@@ -113,10 +113,24 @@ int main(void)
 
     // CAN_Send_Message(0x123, tx_data, 8);
     // CAN_Receive_and_Reply();
-    HAL_IWDG_Refresh(&hiwdg);  //watch dog 500ms timeout
-    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin); // LED翻转
-    HAL_Delay(100); // 延时200毫秒
+    // HAL_IWDG_Refresh(&hiwdg);  //watch dog 500ms timeout
+    // HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin); // LED翻转
+    // HAL_Delay(100); // 延时200毫秒
     // Boot_JumpToApplication();
+    static uint32_t cnt_1ms;
+    static uint32_t led_cnt;
+    if(HAL_GetTick() >= cnt_1ms + 1)
+    {
+        cnt_1ms = HAL_GetTick();
+        uds_1ms_task();
+
+        // LED 灯闪烁
+        if(led_cnt++ > 250)
+        {
+        	led_cnt = 0;
+        	 HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin); // LED翻转
+        }
+    }
   }
   /* USER CODE END 3 */
 }
