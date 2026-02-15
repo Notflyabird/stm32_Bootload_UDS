@@ -61,6 +61,32 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+  uint32_t rx_id;       // 接收的ID
+  uint32_t tx_id;       // 回复的ID（rx_id + 1�?
+  uint8_t rx_data[8];   // 接收的数据缓冲区
+  uint8_t rx_len;       // 接收的数据长�?
+  
+  // 1. 读取接收到的数据
+  if(CAN_Receive_Message(&rx_id, rx_data, &rx_len) != 1)
+  {
+    return; // 接收失败，直接返�?
+  }
+  HAL_UART_Transmit(&huart1, rx_data, rx_len, 0xFFFF);
+
+  // 2. 计算回复ID（原ID+1，限制在标准帧范围内�?
+  tx_id = rx_id + 1;
+  if(tx_id > 0x7FF)    // 标准帧ID�?大为0x7FF�?11位）
+  {
+    tx_id = 0x7FF;     // 超出范围时强制设为最大�??
+  }
+  
+  // 3. 发�?�回复（原数据原样返回，长度与接收一致）
+  (void)CAN_Send_Message(tx_id, rx_data, rx_len);
+  uds_recv_frame(tx_id, rx_data, 8);
+  // 此处可根据需要添加发送失败的处理（如重试），�?化场景下可忽�?
+}
 
 /* USER CODE END 0 */
 
@@ -96,11 +122,11 @@ int main(void)
   MX_DMA_Init();
   MX_USART1_UART_Init();
   MX_CAN_Init();
-  MX_IWDG_Init();
+  // MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
+  uds_init();
   CAN_Filter_Config();
-  uint8_t tx_data[8] = {0xFF, 0xFF, 0xFF, 0xFF,0xFF, 0xFF, 0xFF, 0xFF};
-  HAL_UART_Transmit(&huart1, tx_data, sizeof(tx_data), 0xFFFF);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
