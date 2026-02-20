@@ -73,7 +73,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   {
     return; // 接收失败，直接返�?
   }
-  HAL_UART_Transmit(&huart1, rx_data, rx_len, 0xFFFF);
+  // HAL_UART_Transmit(&huart1, rx_data, rx_len, 0xFFFF);
 
   // 2. 计算回复ID（原ID+1，限制在标准帧范围内�?
   tx_id = rx_id + 1;
@@ -83,7 +83,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   }
   
   // 3. 发�?�回复（原数据原样返回，长度与接收一致）
-  (void)CAN_Send_Message(tx_id, rx_data, rx_len);
+  // (void)CAN_Send_Message(tx_id, rx_data, rx_len);
   uds_recv_frame(tx_id, rx_data, 8);
   // 此处可根据需要添加发送失败的处理（如重试），�?化场景下可忽�?
 }

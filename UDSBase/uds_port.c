@@ -2,7 +2,7 @@
 
 #include "uds_service.h"
 #include "uds_tp.h"
-
+#include "can.h"
 /******************************************************************************
 * 函数名称: void uds_recv_frame(uint32_t id, uint8_t* frame_buf, uint8_t frame_dlc)
 * 功能说明: 接收到一帧报文
@@ -39,6 +39,7 @@ __attribute__((weak)) void uds_send_frame(uint32_t response_id, uint8_t* frame_b
     (void)(response_id);
     (void)(frame_buf);
     (void)(frame_dlc);
+    (void)CAN_Send_Message(response_id, frame_buf, frame_dlc);
 }
 
 
