@@ -153,41 +153,26 @@ uint8_t CAN_Receive_Message(uint32_t *id, uint8_t *data, uint8_t *len)
 
 uint8_t CAN_Send_Message(uint32_t id, uint8_t *data, uint8_t len)
 {
-  CAN_TxHeaderTypeDef TxHeader;
-  uint8_t TxMailbox;
-  HAL_StatusTypeDef status;
-  
-  // 1. 参数合法性检查（核心必要�?查）
-  if(data == NULL || len == 0 || len > 8 || id > 0x7FF)
-  {
-    return 0; // 无效参数，返回失�?
-  }
-  
-  // 2. 配置发�?�帧头（标准帧配置）
-  TxHeader.StdId = id;               // 目标ID
-  TxHeader.ExtId = 0;                // 不使用扩展ID
-  TxHeader.RTR = CAN_RTR_DATA;       // 数据帧（非远程帧�?
-  TxHeader.IDE = CAN_ID_STD;         // 标准帧格式（11位ID�?
-  TxHeader.DLC = len;                // 数据长度�?1~8字节�?
-  TxHeader.TransmitGlobalTime = DISABLE; // 不包含发送时间戳
-  
-  // 3. 发�?�数据（带状态判断）
-  status = HAL_CAN_AddTxMessage(&hcan, &TxHeader, data, &TxMailbox);
-  if(status == HAL_OK)
-  {
-    return 1; // 发�?�成�?
-  }
-  else if(status == HAL_BUSY)
-  {
-    // 发�?�邮箱已满（可根据需求添加重试�?�辑�?
-    return 0;
-  }
-  else
-  {
-    // 其他错误（如外设未启动�?�参数错误等�?
-    return 0;
-  }
+CAN_TxHeaderTypeDef TxHeader;
+uint32_t TxMailbox;
+
+
+TxHeader.StdId = id;
+TxHeader.ExtId = 0;
+TxHeader.IDE = CAN_ID_STD;
+TxHeader.RTR = CAN_RTR_DATA;
+TxHeader.DLC = len;
+TxHeader.TransmitGlobalTime = DISABLE;
+
+if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0)
+{
+    HAL_Delay(1);
 }
-// 中断回调函数：收到数据后自动按ID+1回复
+
+if (HAL_CAN_AddTxMessage(&hcan, &TxHeader, data, &TxMailbox) != HAL_OK)
+{
+    Error_Handler();
+}
+}
 
 /* USER CODE END 1 */

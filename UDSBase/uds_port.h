@@ -7,7 +7,7 @@
 
 #define REQUEST_ID      0x123           // 请求 ID
 #define FUNCTION_ID     0x7DF           // 功能 ID
-#define RESPONSE_ID     0x456           // 应答 ID
+#define RESPONSE_ID     0x122           // 应答 ID
 
 #define UDS_RX_MAX      1024            // 接收缓冲区长度 --UDS TP 层协议规定最大支持 4095 字节，但是可以根据实际需要改动，以免资源浪费
 #define UDS_TX_MAX      128             // 发送缓冲区长度 --UDS TP 层协议规定最大支持 4095 字节，但是可以根据实际需要改动，以免资源浪费
