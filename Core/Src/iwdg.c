@@ -58,6 +58,6 @@ void Software_Reset(void)
 
     __HAL_RCC_AFIO_CLK_ENABLE();
     
-    NVIC_SystemReset();  // HAL 库封装的复位函数，内部已处理密钥
+    NVIC_SystemReset();  
 }
 /* USER CODE END 1 */

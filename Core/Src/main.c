@@ -63,29 +63,27 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-  uint32_t rx_id;       // 接收的ID
-  uint32_t tx_id;       // 回复的ID（rx_id + 1�?
-  uint8_t rx_data[8];   // 接收的数据缓冲区
-  uint8_t rx_len;       // 接收的数据长�?
+  uint32_t rx_id;       // Received ID
+  uint32_t tx_id;       // Reply ID (rx_id + 1)
+  uint8_t rx_data[8];   // Receive data buffer
+  uint8_t rx_len;       // Receive data length
   
-  // 1. 读取接收到的数据
+  // 1. Read received data
   if(CAN_Receive_Message(&rx_id, rx_data, &rx_len) != 1)
   {
-    return; // 接收失败，直接返�?
+    return; // reception failed, return directly
   }
   // HAL_UART_Transmit(&huart1, rx_data, rx_len, 0xFFFF);
 
-  // 2. 计算回复ID（原ID+1，限制在标准帧范围内�?
+  // 2. Calculate reply ID (original ID+1, limited to standard frame range)
   tx_id = rx_id + 1;
-  if(tx_id > 0x7FF)    // 标准帧ID�?大为0x7FF�?11位）
+  if(tx_id > 0x7FF)    // Standard frame ID max is 0x7FF (11 bits)
   {
-    tx_id = 0x7FF;     // 超出范围时强制设为最大�??
+    tx_id = 0x7FF;     // Force to maximum value when out of range
   }
   
-  // 3. 发�?�回复（原数据原样返回，长度与接收一致）
-  // (void)CAN_Send_Message(tx_id, rx_data, rx_len);
   uds_recv_frame(tx_id, rx_data, 8);
-  // 此处可根据需要添加发送失败的处理（如重试），�?化场景下可忽�?
+  // Add error handling for failed transmission here if needed (e.g., retry), can be ignored in simplified scenarios
 }
 
 
@@ -123,10 +121,9 @@ int main(void)
   MX_DMA_Init();
   MX_USART1_UART_Init();
   MX_CAN_Init();
-  // MX_IWDG_Init();
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
   uds_init();
-  uint8_t tx_data[8] = {0xDE, 0xAD, 0xBE, 0xEF, 0x01, 0x02, 0x03, 0x04};
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -136,13 +133,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    // CAN_test();
-    //CAN_Send_Message(0x122, tx_data, 8);
-    // CAN_Receive_and_Reply();
-    // HAL_IWDG_Refresh(&hiwdg);  //watch dog 500ms timeout
-    // HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin); // LED翻转
-    // HAL_Delay(100); // 延时200毫秒
-    // Boot_JumpToApplication();
     static uint32_t cnt_1ms;
     static uint32_t led_cnt;
     if(HAL_GetTick() >= cnt_1ms + 1)
@@ -150,11 +140,12 @@ int main(void)
         cnt_1ms = HAL_GetTick();
         uds_1ms_task();
 
-        // LED 灯闪烁
+        // LED flashing
         if(led_cnt++ > 250)
         {
+          HAL_IWDG_Refresh(&hiwdg);  // Watch dog 500ms timeout
         	led_cnt = 0;
-        	 HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin); // LED翻转
+        	 HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin); // LED flashing
         }
     }
   }

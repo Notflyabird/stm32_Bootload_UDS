@@ -19,17 +19,17 @@ void MX_CAN_Init(void)
   /* USER CODE BEGIN CAN_Init 1 */
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
-  // ========== 500kbit/s 核心配置（36MHz APB1） ==========
-  hcan.Init.Prescaler = 9;                // 预分频器：9
-  hcan.Init.Mode = CAN_MODE_NORMAL;       // 正常模式（非回环）
+  // ========== 500kbit/s core configuration (36MHz APB1) ==========
+  hcan.Init.Prescaler = 9;                // Prescaler: 9
+  hcan.Init.Mode = CAN_MODE_NORMAL;       // Normal mode (non-loopback)
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;  // SJW=1TQ
   hcan.Init.TimeSeg1 = CAN_BS1_6TQ;       // BS1=6TQ
   hcan.Init.TimeSeg2 = CAN_BS2_1TQ;       // BS2=1TQ
-  // ========== 稳定性配置 ==========
+  // ========== Stability configuration ==========
   hcan.Init.TimeTriggeredMode = DISABLE;
-  hcan.Init.AutoBusOff = ENABLE;          // 总线关闭后自动恢复
+  hcan.Init.AutoBusOff = ENABLE;          // Auto recovery after bus off
   hcan.Init.AutoWakeUp = DISABLE;
-  hcan.Init.AutoRetransmission = ENABLE;  // 开启自动重传（关键）
+  hcan.Init.AutoRetransmission = ENABLE;  // Enable auto retransmission (critical)
   hcan.Init.ReceiveFifoLocked = DISABLE;
   hcan.Init.TransmitFifoPriority = DISABLE;
   if (HAL_CAN_Init(&hcan) != HAL_OK)
@@ -67,7 +67,7 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    /* CAN1 interrupt Init（如需中断接收则保留） */
+    /* CAN1 interrupt Init (keep if interrupt reception is needed) */
     HAL_NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
     HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 0, 0);
@@ -103,7 +103,7 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 
 /* USER CODE BEGIN 1 */
 
-// �?化版CAN过滤器配置：不过滤任何ID，直接接收所有标准帧
+// Simplified CAN filter configuration: no ID filtering, receive all standard frames directly
 void CAN_Filter_Config(void)
 {
   CAN_FilterTypeDef CAN_FilterInitStructure;
@@ -124,23 +124,23 @@ void CAN_Filter_Config(void)
     Error_Handler();
   }
   
-  // 启动CAN外设
+  // Start CAN peripheral
   if(HAL_CAN_Start(&hcan) != HAL_OK)
   {
     Error_Handler();
   }
   
-  // 使能FIFO0接收中断（有数据时触发）
+  // Enable FIFO0 receive interrupt (triggered when data arrives)
   if(HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
   {
     Error_Handler();
   }
 }
 
-// （接前面的过滤器配置和接收函数）
+// (Continuing from the filter configuration and receive function above)
 uint8_t CAN_Receive_Message(uint32_t *id, uint8_t *data, uint8_t *len)
 {
-  // 函数体实�?
+  // Function implementation
   CAN_RxHeaderTypeDef RxHeader;
   if(id == NULL || data == NULL || len == NULL)
     return 0;
