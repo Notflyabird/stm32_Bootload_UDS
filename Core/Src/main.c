@@ -61,30 +61,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
-{
-  uint32_t rx_id;       // Received ID
-  uint32_t tx_id;       // Reply ID (rx_id + 1)
-  uint8_t rx_data[8];   // Receive data buffer
-  uint8_t rx_len;       // Receive data length
-  
-  // 1. Read received data
-  if(CAN_Receive_Message(&rx_id, rx_data, &rx_len) != 1)
-  {
-    return; // reception failed, return directly
-  }
-  // HAL_UART_Transmit(&huart1, rx_data, rx_len, 0xFFFF);
 
-  // 2. Calculate reply ID (original ID+1, limited to standard frame range)
-  tx_id = rx_id + 1;
-  if(tx_id > 0x7FF)    // Standard frame ID max is 0x7FF (11 bits)
-  {
-    tx_id = 0x7FF;     // Force to maximum value when out of range
-  }
-  
-  uds_recv_frame(tx_id, rx_data, 8);
-  // Add error handling for failed transmission here if needed (e.g., retry), can be ignored in simplified scenarios
-}
 
 
 /* USER CODE END 0 */
