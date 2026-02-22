@@ -19,15 +19,17 @@ void MX_CAN_Init(void)
   /* USER CODE BEGIN CAN_Init 1 */
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
-  hcan.Init.Prescaler = 4;
-  hcan.Init.Mode = CAN_MODE_NORMAL;
-  hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_5TQ;
-  hcan.Init.TimeSeg2 = CAN_BS2_2TQ;
+  // ========== 500kbit/s 核心配置（36MHz APB1） ==========
+  hcan.Init.Prescaler = 9;                // 预分频器：9
+  hcan.Init.Mode = CAN_MODE_NORMAL;       // 正常模式（非回环）
+  hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;  // SJW=1TQ
+  hcan.Init.TimeSeg1 = CAN_BS1_6TQ;       // BS1=6TQ
+  hcan.Init.TimeSeg2 = CAN_BS2_1TQ;       // BS2=1TQ
+  // ========== 稳定性配置 ==========
   hcan.Init.TimeTriggeredMode = DISABLE;
-  hcan.Init.AutoBusOff = ENABLE;
+  hcan.Init.AutoBusOff = ENABLE;          // 总线关闭后自动恢复
   hcan.Init.AutoWakeUp = DISABLE;
-  hcan.Init.AutoRetransmission = DISABLE;
+  hcan.Init.AutoRetransmission = ENABLE;  // 开启自动重传（关键）
   hcan.Init.ReceiveFifoLocked = DISABLE;
   hcan.Init.TransmitFifoPriority = DISABLE;
   if (HAL_CAN_Init(&hcan) != HAL_OK)
@@ -35,13 +37,13 @@ void MX_CAN_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN_Init 2 */
+  CAN_Filter_Config();
   /* USER CODE END CAN_Init 2 */
 
 }
 
 void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
 {
-
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   if(canHandle->Instance==CAN1)
   {
@@ -65,7 +67,7 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    /* CAN1 interrupt Init */
+    /* CAN1 interrupt Init（如需中断接收则保留） */
     HAL_NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
     HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 0, 0);
@@ -106,27 +108,17 @@ void CAN_Filter_Config(void)
 {
   CAN_FilterTypeDef CAN_FilterInitStructure;
   
-  // 过滤器组0配置（单CAN外设场景�?
   CAN_FilterInitStructure.FilterBank = 0;
-  // 掩码模式：全0掩码实现不过�?
   CAN_FilterInitStructure.FilterMode = CAN_FILTERMODE_IDMASK;
-  // 32位过滤器（�?�配标准�?11位ID�?
   CAN_FilterInitStructure.FilterScale = CAN_FILTERSCALE_32BIT;
-  
-  // 过滤器ID和掩码全0 �? 接收�?有标准帧
   CAN_FilterInitStructure.FilterIdHigh = 0x0000;
   CAN_FilterInitStructure.FilterIdLow = 0x0000;
   CAN_FilterInitStructure.FilterMaskIdHigh = 0x0000;
   CAN_FilterInitStructure.FilterMaskIdLow = 0x0000;
-  
-  // 接收数据放入FIFO0
   CAN_FilterInitStructure.FilterFIFOAssignment = CAN_RX_FIFO0;
-  // 使能过滤�?
   CAN_FilterInitStructure.FilterActivation = ENABLE;
-  // 单CAN外设无需关心从机配置
   CAN_FilterInitStructure.SlaveStartFilterBank = 14;
   
-  // 配置过滤�?
   if(HAL_CAN_ConfigFilter(&hcan, &CAN_FilterInitStructure) != HAL_OK)
   {
     Error_Handler();

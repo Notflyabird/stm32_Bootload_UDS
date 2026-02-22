@@ -87,7 +87,29 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   uds_recv_frame(tx_id, rx_data, 8);
   // 此处可根据需要添加发送失败的处理（如重试），�?化场景下可忽�?
 }
+void CAN_test()
+{
+  CAN_TxHeaderTypeDef TxHeader;
+uint32_t TxMailbox;
+uint8_t TxData[8] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
 
+TxHeader.StdId = 0x123;
+TxHeader.ExtId = 0;
+TxHeader.IDE = CAN_ID_STD;
+TxHeader.RTR = CAN_RTR_DATA;
+TxHeader.DLC = 8;
+TxHeader.TransmitGlobalTime = DISABLE;
+
+if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0)
+{
+    HAL_Delay(1);
+}
+
+if (HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox) != HAL_OK)
+{
+    Error_Handler();
+}
+}
 /* USER CODE END 0 */
 
 /**
@@ -125,8 +147,7 @@ int main(void)
   // MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
   uds_init();
-  CAN_Filter_Config();
-
+  uint8_t tx_data[8] = {0xDE, 0xAD, 0xBE, 0xEF, 0x01, 0x02, 0x03, 0x04};
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -136,7 +157,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
+    CAN_test();
     // CAN_Send_Message(0x123, tx_data, 8);
     // CAN_Receive_and_Reply();
     // HAL_IWDG_Refresh(&hiwdg);  //watch dog 500ms timeout
@@ -179,7 +200,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL16;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -191,7 +212,7 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
