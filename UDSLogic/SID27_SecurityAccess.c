@@ -11,7 +11,8 @@
 #define SHIFTBIT					1
 #define ALGORITHMASK				0x42303131
 
-#define UDS_SEED_LENGTH                   (0x04)
+#define UDS_SEED_LENGTH                   (16)
+#define UDS_KEY_LENGTH                    (16)
 #define UDS_REQUEST_SEED                  (0x01)
 #define UDS_SEND_KEY                      (0x02)
 #define UDS_FAS_MAX_TIMES                 (0x02)  /* failed security access */
@@ -97,16 +98,27 @@ static uint32_t seedTOKey(uint32_t seed)
 ******************************************************************************/
 int uds_security_access(uint8_t* key_buf, uint8_t* seed_buf)
 {
-	uint32_t key = 0;
-	uint32_t seed = 0;
-    
-	key = (key_buf[0] << 24) |  (key_buf[1] << 16) |  (key_buf[2] << 8) |  key_buf[3];
-	seed = (seed_buf[0] << 24) |  (seed_buf[1] << 16) |  (seed_buf[2] << 8) |  seed_buf[3];
 
-	if (key == seedTOKey(seed))
-	    return 0;
-	else
-	    return -1;
+	uint8_t i=0;
+	uint32_t msg_len = UDS_SEED_LENGTH;
+    uint8_t computed_mac[16];
+    uint8_t AES_CMAC_key[16] = {
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+    };
+    AES_CMAC_CTX ctx;
+    aes_cmac_init(&ctx, AES_CMAC_key);
+    aes_cmac_compute(&ctx, seed_buf, msg_len, computed_mac);
+
+	for(i=0;i<16;i++)
+	{
+		if(computed_mac[i] != key_buf[i])
+		{
+			return -1;
+		}
+	}
+	 return 0;
+
 }
 
 
@@ -126,7 +138,7 @@ bool_t service_27_check_len(const uint8_t* msg_buf, uint16_t msg_dlc)
 	subfunction = UDS_GET_SUB_FUNCTION(msg_buf[1]);
 	
 	if ((UDS_REQUEST_SEED == subfunction && 2 == msg_dlc)
-		|| (UDS_SEND_KEY == subfunction && 6 == msg_dlc))
+		|| (UDS_SEND_KEY == subfunction && (2 + UDS_KEY_LENGTH) == msg_dlc))
 
 	{
 		ret = TRUE;
@@ -148,7 +160,7 @@ bool_t service_27_check_len(const uint8_t* msg_buf, uint16_t msg_dlc)
 void service_27_SecurityAccess(const uint8_t* msg_buf, uint16_t msg_dlc)
 {
     uint8_t subfunction;
-	uint8_t rsp_buf[8];
+	uint8_t rsp_buf[20];  // seed:16byte+27 xx: 2byte+ lenth:2byte
 	uint16_t i;
 
 	subfunction = UDS_GET_SUB_FUNCTION(msg_buf[1]);

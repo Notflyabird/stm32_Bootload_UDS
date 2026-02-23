@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include "uds_type.h"
 #include "uds_service.h"
+#include "aes_cmac.h"
 
 /******************************************************************************
 * 函数名称: void service_27_SecurityAccess(const uint8_t* msg_buf, uint16_t msg_dlc)
