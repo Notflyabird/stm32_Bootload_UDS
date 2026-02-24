@@ -19,8 +19,7 @@ void uds_recv_frame(uint32_t id, uint8_t* frame_buf, uint8_t frame_dlc)
         uds_tp_recv_frame(0, frame_buf, frame_dlc);
     else if(FUNCTION_ID == id)
         uds_tp_recv_frame(1, frame_buf, frame_dlc);
-    else
-        ; // do nothing
+
 }
 
 

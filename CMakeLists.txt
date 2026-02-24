@@ -49,6 +49,7 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/aes_cmac.c
     Core/Src/boot_jump.c
+    Core/Src/flash_erase.c
         # 其他源文件
         # RingBuf sources
         RingBuf/msg_buf.c

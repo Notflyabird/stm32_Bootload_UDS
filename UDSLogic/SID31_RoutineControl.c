@@ -1,8 +1,7 @@
 #include "SID31_RoutineControl.h"
 #include "service_cfg.h"
 #include "uds_service.h"
-
-
+#include "flash_erase.h"
 /*
  * 31 01 ff 00 擦除内存
  * 31 01 02 02 检查传输数据完整性
@@ -53,92 +52,107 @@ bool_t service_31_check_len(const uint8_t* msg_buf, uint16_t msg_dlc)
 ******************************************************************************/
 void service_31_RoutineControl(const uint8_t* msg_buf, uint16_t msg_dlc)
 {
-    uint8_t subfunction;
-	uint8_t rsp_buf[8];
-	uint16_t rid;
-	// uint16_t rid_n;
-	bool_t find_rid;
+    uint8_t subfunction = UDS_GET_SUB_FUNCTION(msg_buf[1]);
+    uint8_t rsp_buf[8];
+    uint16_t rid = ((uint16_t)msg_buf[2] << 8) | msg_buf[3];
+    bool_t find_rid = FALSE;
 
-    subfunction = UDS_GET_SUB_FUNCTION (msg_buf[1]);
-	rid = ((uint16_t)msg_buf[2]) << 8;
-	rid |= msg_buf[3];
+    rsp_buf[0] = USD_GET_POSITIVE_RSP(SID_31);
+    rsp_buf[1] = msg_buf[1];
+    rsp_buf[2] = msg_buf[2];
+    rsp_buf[3] = msg_buf[3];
 
-	find_rid = FALSE;
-	// for (rid_n = 0; rid_n < RTCTRL_NUM; rid_n++)
-	// {
-	// 	if (rtctrl_list[rid_n].rid == rid)
-	// 	{
-	// 		find_rid = TRUE;
-	// 		break;
-	// 	}
-	// }
-
-	rsp_buf[0] = USD_GET_POSITIVE_RSP(SID_31);
-	rsp_buf[1] = msg_buf[1];
-	rsp_buf[2] = msg_buf[2];
-	rsp_buf[3] = msg_buf[3];
     switch (subfunction)
-	{
-		case UDS_ROUTINE_CTRL_START:
-		    if (find_rid == TRUE)
-			{
-                // if (rtctrl_list[rid_n].rtst == UDS_RT_ST_RUNNING)
-				if(1)
-				{
-                    uds_negative_rsp (SID_31,NRC_REQUEST_SEQUENCE_ERROR);
-				}
-				else
-				{
-					// rtctrl_list[rid_n].init_routine ();
-					uds_positive_rsp (rsp_buf,4);
-				}
-			}
-			else
-			{
-				uds_negative_rsp (SID_31,NRC_REQUEST_OUT_OF_RANGE);
-			}
-		    break;
-		case UDS_ROUTINE_CTRL_STOP:
-		    if (find_rid == TRUE)
-			{
-                // if (rtctrl_list[rid_n].rtst == UDS_RT_ST_IDLE)
-				if(1)
-				{
-                    uds_negative_rsp (SID_31,NRC_REQUEST_SEQUENCE_ERROR);
-				}
-				else
-				{
-					// rtctrl_list[rid_n].stop_routine ();
-					uds_positive_rsp (rsp_buf,4);
-				}
-			}
-			else
-			{
-				uds_negative_rsp (SID_31,NRC_REQUEST_OUT_OF_RANGE);
-			}
-		    break;
-		case UDS_ROUTINE_CTRL_REQUEST_RESULT:
-		    if (find_rid == TRUE)
-			{
-                // if (rtctrl_list[rid_n].rtst == UDS_RT_ST_IDLE)
-				if(1)
-				{
-                    uds_negative_rsp (SID_31,NRC_REQUEST_SEQUENCE_ERROR);
-				}
-				else
-				{
-					// rsp_buf[4] = (uint8_t)rtctrl_list[rid_n].rtst;
-				}
-			}
-			else
-			{
-				uds_negative_rsp (SID_31,NRC_REQUEST_OUT_OF_RANGE);
-			}
-		    break;
-		default:
-		    uds_negative_rsp (SID_31, NRC_SUBFUNCTION_NOT_SUPPORTED);
-		    break;
-	}
+    {
+        case UDS_ROUTINE_CTRL_START:
+        {
+            if (rid == 0xFF00u)
+            {
+                if (msg_dlc < 12u)
+                {
+                    uds_negative_rsp(SID_31, NRC_INVALID_MESSAGE_LENGTH_OR_FORMAT);
+                    break;
+                }
+
+                uint32_t startAddr = ((uint32_t)msg_buf[4] << 24) |
+                                     ((uint32_t)msg_buf[5] << 16) |
+                                     ((uint32_t)msg_buf[6] << 8)  |
+                                     ((uint32_t)msg_buf[7] << 0);
+
+                uint32_t length = ((uint32_t)msg_buf[8] << 24) |
+                                  ((uint32_t)msg_buf[9] << 16) |
+                                  ((uint32_t)msg_buf[10] << 8) |
+                                  ((uint32_t)msg_buf[11] << 0);
+
+                if (length == 0u)
+                {
+                    uds_negative_rsp(SID_31, NRC_REQUEST_OUT_OF_RANGE);
+                    break;
+                }
+
+                if (flash_erase_region(startAddr, length) == HAL_OK)
+                {
+                    uds_positive_rsp(rsp_buf, 4);
+                }
+                else
+                {
+                    uds_negative_rsp(SID_31, NRC_GENERAL_PROGRAMMING_FAILURE);
+                }
+            }
+            else if (find_rid == TRUE)
+            {
+                if (1)
+                {
+                    uds_negative_rsp(SID_31, NRC_REQUEST_SEQUENCE_ERROR);
+                }
+                else
+                {
+                    uds_positive_rsp(rsp_buf, 4);
+                }
+            }
+            else
+            {
+                uds_negative_rsp(SID_31, NRC_REQUEST_OUT_OF_RANGE);
+            }
+            break;
+        }
+        case UDS_ROUTINE_CTRL_STOP:
+            if (find_rid == TRUE)
+            {
+                if (1)
+                {
+                    uds_negative_rsp(SID_31, NRC_REQUEST_SEQUENCE_ERROR);
+                }
+                else
+                {
+                    uds_positive_rsp(rsp_buf, 4);
+                }
+            }
+            else
+            {
+                uds_negative_rsp(SID_31, NRC_REQUEST_OUT_OF_RANGE);
+            }
+            break;
+        case UDS_ROUTINE_CTRL_REQUEST_RESULT:
+            if (find_rid == TRUE)
+            {
+                if (1)
+                {
+                    uds_negative_rsp(SID_31, NRC_REQUEST_SEQUENCE_ERROR);
+                }
+                else
+                {
+                }
+            }
+            else
+            {
+                uds_negative_rsp(SID_31, NRC_REQUEST_OUT_OF_RANGE);
+            }
+            break;
+        default:
+            uds_negative_rsp(SID_31, NRC_SUBFUNCTION_NOT_SUPPORTED);
+            break;
+    }
 }
 
 

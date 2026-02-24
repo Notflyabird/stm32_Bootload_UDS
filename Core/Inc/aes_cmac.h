@@ -17,5 +17,6 @@ void aes_cmac_init(AES_CMAC_CTX *ctx, const uint8_t *key);
 void aes_cmac_compute(AES_CMAC_CTX *ctx, const uint8_t *msg, uint32_t msg_len, uint8_t *out_mac);
 void aes_cmac_test(void);         // 测试函数
 void aes_test(void);              // AES单独测试函数
+void uart_print_hex(const uint8_t *data, uint32_t len, const char *prefix);
 
 #endif  // AES_CMAC_H

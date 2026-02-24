@@ -22,7 +22,7 @@ static void xor_block(const uint8_t *a, const uint8_t *b, uint8_t *out) {
 }
 
 // 串口打印十六进制（辅助调试）
-static void uart_print_hex(const uint8_t *data, uint32_t len, const char *prefix) {
+ void uart_print_hex(const uint8_t *data, uint32_t len, const char *prefix) {
     HAL_UART_Transmit(&huart1, (uint8_t*)prefix, strlen(prefix), 0xFFFF);
     for (uint32_t i = 0; i < len; i++) {
         uint8_t hex[3];

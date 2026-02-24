@@ -69,7 +69,7 @@ typedef enum __NETWORK_FLOW_STATUS__
 #define NT_XMIT_FC_BS               (0)
 
 // 通知发送方发送连续帧的帧间隔最小时间，单位: ms
-#define NT_XMIT_FC_STMIN            (0x0A)
+#define NT_XMIT_FC_STMIN            (0x01)
 
 // 接收方收到连续帧间隔时间不能大于 TIMEOUT_N_CR，单位: ms
 #define TIMEOUT_N_CR                (1000)
