@@ -2,10 +2,11 @@
 #include "service_cfg.h"
 #include "uds_service.h"
 #include "SID10_SessionControl.h"
+#include "aes_cmac.h" /* for uart_print_hex() */
 
 #define DOWNLOAD    1
 #define UPLOAD      2
-#define maxNumberOfBlockLength 512
+#define maxNumberOfBlockLength 498
 uint8_t UpDownLoadReq = 0;
 uint8_t encryptingMethod =0;
 uint8_t compressionMethod =0;
@@ -92,11 +93,9 @@ void service_34_RequestDownload(const uint8_t* msg_buf, uint16_t msg_dlc)
 	uint8_t mslen,malen;
 
     rsp_buf[0] = USD_GET_POSITIVE_RSP(SID_34);
-	rsp_buf[1] = 0x40;
-	rsp_buf[2] = maxNumberOfBlockLength >>24;
-    rsp_buf[3] = maxNumberOfBlockLength >>16;
-    rsp_buf[4] = maxNumberOfBlockLength >>8;
-    rsp_buf[5] = maxNumberOfBlockLength;
+	rsp_buf[1] = 0x20;
+    rsp_buf[2] = maxNumberOfBlockLength >>8;
+    rsp_buf[3] = maxNumberOfBlockLength & 0xFF;
 
     compressionMethod = msg_buf[1] >>4;
     encryptingMethod  = msg_buf[1] &0x0f;
@@ -121,7 +120,7 @@ void service_34_RequestDownload(const uint8_t* msg_buf, uint16_t msg_dlc)
     }
     else
 	{
-        uds_positive_rsp(rsp_buf, 6);
+        uds_positive_rsp(rsp_buf, 4);
     }
 			
 }
