@@ -51,6 +51,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/boot_jump.c
     Core/Src/flash_erase.c
     Core/Src/flash_program.c
+    Core/Src/CRC.c
         # 其他源文件
         # RingBuf sources
         RingBuf/msg_buf.c

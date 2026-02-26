@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include "uds_type.h"
 
+extern volatile uint16_t CRCValue;
+
 bool_t service_34_check_len(const uint8_t* msg_buf, uint16_t msg_dlc);
 bool_t service_36_check_len(const uint8_t* msg_buf, uint16_t msg_dlc);
 bool_t service_37_check_len(const uint8_t* msg_buf, uint16_t msg_dlc);

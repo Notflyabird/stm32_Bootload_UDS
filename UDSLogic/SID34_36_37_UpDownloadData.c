@@ -4,6 +4,7 @@
 #include "SID10_SessionControl.h"
 #include "stm32f1xx_hal.h" /* for HAL_FLASH_Program */
 #include "flash_program.h" /* for flash_write_data() */
+#include "CRC.h" /* for UDSResponse */
 
 #define DOWNLOAD    1
 #define UPLOAD      2
@@ -15,6 +16,7 @@ uint32_t memoryAddress =0;
 uint32_t memorySize =0;
 uint8_t blockSequenceCounter =0;
 uint32_t writtenBytes = 0; /* Track bytes written during download */
+volatile uint16_t CRCValue=0xffff;
 /******************************************************************************
 * 函数名称: bool_t service_34_check_len(const uint8_t* msg_buf, uint16_t msg_dlc)
 * 功能说明: 检查 34 服务数据长度是否合法
@@ -136,6 +138,7 @@ void service_34_RequestDownload(const uint8_t* msg_buf, uint16_t msg_dlc)
         writtenBytes = 0;
         blockSequenceCounter = 0;
         uds_positive_rsp(rsp_buf, 4);
+        crc_init(); /* Initialize CRC before starting download */
     }
 			
 }
@@ -201,7 +204,8 @@ void service_36_TransferData(const uint8_t* msg_buf, uint16_t msg_dlc)
 
                 /* Write data to Flash */
                 status = flash_write_data(writeAddr, &msg_buf[2], dataLen);
-                
+     
+                CRCValue=crc16_ccitt(&msg_buf[2], dataLen);
                 if(status == HAL_OK)
                 {
                     writtenBytes += dataLen;
