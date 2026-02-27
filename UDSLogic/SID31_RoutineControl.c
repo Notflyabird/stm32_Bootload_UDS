@@ -107,14 +107,15 @@ void service_31_RoutineControl(const uint8_t* msg_buf, uint16_t msg_dlc)
                     uds_negative_rsp(SID_31, NRC_INVALID_MESSAGE_LENGTH_OR_FORMAT);
                     break;
                 }
-				if(CRCValue== ((uint16_t)msg_buf[4] << 8)|((uint16_t)msg_buf[5] << 0))
+				if(CRCValue == ((uint16_t)msg_buf[4] << 8)+((uint16_t)msg_buf[5] << 0))
 				{
 					rsp_buf[4]=0x10;
 					uds_positive_rsp(rsp_buf, 5);
 				}
 				else
 				{
-					uds_negative_rsp(SID_31, NRC_REQUEST_OUT_OF_RANGE);
+					rsp_buf[4]=0x01; //crc check failed
+					uds_positive_rsp(rsp_buf, 5);
 				}
 			}
             else if (find_rid == TRUE)
