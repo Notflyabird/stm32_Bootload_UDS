@@ -171,6 +171,10 @@ SECTIONS
     . = . + _Min_Stack_Size;
     . = ALIGN(8);
   } >RAM  /* 修复：添加 >RAM，指定堆和栈在RAM中 */
+   .fbl_version 0x08007FF0:
+  {
+    KEEP(*(.fbl_version)) 
+  } > FLASH
 
   /* Remove information from the standard libraries */
   /DISCARD/ :

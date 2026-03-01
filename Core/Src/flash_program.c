@@ -1,6 +1,9 @@
 #include "flash_program.h"
 #include "iwdg.h"
 
+
+const uint32_t fbl_version __attribute__((section(".fbl_version"))) = 0x20260301; // v1.0
+
 /******************************************************************************
 * 函数名称: HAL_StatusTypeDef flash_write_data(uint32_t addr, const uint8_t* data, uint16_t len)
 * 功能说明: 将数据写入 Flash
@@ -52,3 +55,52 @@ HAL_StatusTypeDef flash_write_data(uint32_t addr, const uint8_t* data, uint16_t 
     
     return status;
 }
+
+
+/**
+ * @brief  读取Flash指定地址的4个字节内容（核心函数）
+ */
+HAL_StatusTypeDef flash_read_4bytes(uint32_t flash_addr, uint8_t *read_buf)
+{
+    // 1. 参数合法性检查
+    if (read_buf == NULL)
+    {
+        return HAL_ERROR; // 缓冲区NULL
+    }
+    
+    // 2. 检查地址是否在Flash有效范围内，且剩余空间≥4字节
+    if (flash_addr < FLASH_BASE_ADDR || flash_addr + 3 > FLASH_END_ADDR)
+    {
+        return HAL_ERROR; // 地址非法/超出范围
+    }
+
+    // 3. 直接读取Flash内容（Flash只读，无需解锁）
+    // 方式1：逐字节读取（直观，适合新手）
+    read_buf[0] = *(uint8_t *)(flash_addr + 0);
+    read_buf[1] = *(uint8_t *)(flash_addr + 1);
+    read_buf[2] = *(uint8_t *)(flash_addr + 2);
+    read_buf[3] = *(uint8_t *)(flash_addr + 3);
+
+    // 方式2：按32位读取（效率更高，等价于方式1）
+    // uint32_t flash_data = *(uint32_t *)flash_addr;
+    // memcpy(read_buf, &flash_data, 4);
+
+    return HAL_OK;
+}
+
+/**
+ * @brief  读取FBL版本号（封装函数，简化调用）
+ */
+HAL_StatusTypeDef fbl_version_read(uint8_t *version_buf)
+{
+    return flash_read_4bytes(FBL_VERSION_ADDR, version_buf);
+}
+
+/**
+ * @brief  读取APP有效标志（封装函数，简化调用）
+ */
+HAL_StatusTypeDef app_valid_flag_read(uint8_t *flag_buf)
+{
+    return flash_read_4bytes(APP_VALID_FLAG_ADDR, flag_buf);
+}
+

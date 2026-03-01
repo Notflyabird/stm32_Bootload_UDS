@@ -3,6 +3,7 @@
 #include "uds_service.h"
 #include "flash_erase.h"
 #include "SID34_36_37_UpDownloadData.h"
+#include "flash_program.h"
 /*
  * 31 01 ff 00 擦除内存
  * 31 01 02 02 检查传输数据完整性
@@ -111,6 +112,7 @@ void service_31_RoutineControl(const uint8_t* msg_buf, uint16_t msg_dlc)
 				{
 					rsp_buf[4]=0x10;
 					uds_positive_rsp(rsp_buf, 5);
+                    //Set_APP_valid_flag();
 				}
 				else
 				{
