@@ -7,7 +7,7 @@
 /*
  * 31 01 ff 00 擦除内存
  * 31 01 02 02 检查传输数据完整性
- * 31 01 02 03 更新条件查询
+ * 31 01 02 05 FBL APP 版本一致性检查
  * 31 01 ff 01 软硬件一致性检查
  * 31 01 df e0 从节点模式选择
  * 31 01 02 04 数字签名
@@ -36,7 +36,7 @@ bool_t service_31_check_len(const uint8_t* msg_buf, uint16_t msg_dlc)
 	bool_t ret = FALSE;
 	
 	(void)msg_buf;
-	if(msg_dlc > 4)
+	if(msg_dlc >= 4)
 		ret = TRUE;
 
 	return ret;
@@ -58,6 +58,7 @@ void service_31_RoutineControl(const uint8_t* msg_buf, uint16_t msg_dlc)
     uint8_t rsp_buf[8];
     uint16_t rid = ((uint16_t)msg_buf[2] << 8) | msg_buf[3];
     bool_t find_rid = FALSE;
+    static bool_t crc_check_result = FALSE;
 
     rsp_buf[0] = USD_GET_POSITIVE_RSP(SID_31);
     rsp_buf[1] = msg_buf[1];
@@ -110,17 +111,46 @@ void service_31_RoutineControl(const uint8_t* msg_buf, uint16_t msg_dlc)
                 }
 				if(CRCValue == ((uint16_t)msg_buf[4] << 8)+((uint16_t)msg_buf[5] << 0))
 				{
+                    crc_check_result=TRUE; 
 					rsp_buf[4]=0x10;
 					uds_positive_rsp(rsp_buf, 5);
-                    //Set_APP_valid_flag();
-				}
-				else
-				{
+				}else
+                {
+                    crc_check_result=FALSE; 
 					rsp_buf[4]=0x01; //crc check failed
 					uds_positive_rsp(rsp_buf, 5);
 				}
 			}
-            else if (find_rid == TRUE)
+			if (rid == 0x0205u)
+			{
+                if (msg_dlc < 4u)
+                {
+                    uds_negative_rsp(SID_31, NRC_INVALID_MESSAGE_LENGTH_OR_FORMAT);
+                    break;
+                }
+				if(*(uint32_t *)(FBL_VERSION_ADDR) == *(uint32_t *)(APP_VERSION_ADDR))
+				{
+                    if(crc_check_result == TRUE)
+                    {
+                        rsp_buf[4]=0x10; //version and crc check passed
+                        if(Set_APP_valid_flag() != HAL_OK)
+                        {
+                            uds_negative_rsp(SID_31, NRC_GENERAL_PROGRAMMING_FAILURE);
+                        }
+                    }
+                    else
+                    {
+                        rsp_buf[4]=0x12; //version check passed but crc check failed
+                    }
+                    uds_positive_rsp(rsp_buf, 5);
+				}
+				else
+				{
+
+					rsp_buf[4]=0x01; //version check failed
+					uds_positive_rsp(rsp_buf, 5);
+				}
+			}else if (find_rid == TRUE)
             {
                 if (1)
                 {
@@ -131,10 +161,10 @@ void service_31_RoutineControl(const uint8_t* msg_buf, uint16_t msg_dlc)
                     uds_positive_rsp(rsp_buf, 4);
                 }
             }
-            else
-            {
-                uds_negative_rsp(SID_31, NRC_REQUEST_OUT_OF_RANGE);
-            }
+            // else
+            // {
+            //    uds_negative_rsp(SID_31, NRC_REQUEST_OUT_OF_RANGE);
+            // }
             break;
         }
         case UDS_ROUTINE_CTRL_STOP:
