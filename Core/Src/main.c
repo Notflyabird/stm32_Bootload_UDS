@@ -63,6 +63,19 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 
 
+#define LED_PIN GPIO_PIN_0
+#define LED_PORT GPIOC
+
+// 第一步：修正裸机LED初始化（仅操作GPIO，不干扰HAL）
+void BareMetal_LED_Init(void) {
+    // 1. 启用GPIOC时钟（裸机方式，仅操作必要寄存器）
+    RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
+    // 2. 配置PC0为推挽输出（10MHz，裸机最简配置）
+    LED_PORT->CRL &= ~(GPIO_CRL_MODE0 | GPIO_CRL_CNF0);
+    LED_PORT->CRL |= GPIO_CRL_MODE0_0;
+    // 3. 点亮LED：明确表示进入APP的裸机阶段
+    LED_PORT->ODR |= LED_PIN;
+}
 
 /* USER CODE END 0 */
 
@@ -73,65 +86,74 @@ void SystemClock_Config(void);
 int main(void)
 {
 
-  /* USER CODE BEGIN 1 */
+   /************************ 1. 裸机LED初始化（证明跳转成功） ************************/
+    BareMetal_LED_Init(); // 先亮LED，确认跳转到APP
+    // （删除多余的ODR翻转，避免干扰状态判断）
 
-  /* USER CODE END 1 */
+    /************************ 2. 先初始化系统时钟（HAL_Init的前提！） ************************/
+    // 关键：HAL_Init依赖SystemCoreClock，必须先配置时钟为36MHz HSI
+    RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+    RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /* MCU Configuration--------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
-
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
-  SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_USART1_UART_Init();
-  MX_CAN_Init();
-  uint8_t key[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};  // Example key (should be securely stored and managed in production)
-  uart_print_hex(key, 16, "Computed MAC: ");
-  Boot_JumpToApplication();  // Jump to application if valid application exists
-
-  MX_IWDG_Init();
-  /* USER CODE BEGIN 2 */
-  uds_init();
-
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
-    static uint32_t cnt_1ms;
-    static uint32_t led_cnt;
-    if(HAL_GetTick() >= cnt_1ms + 1)
+    // 2.1 启用HSI 8MHz并配置PLL→36MHz
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+    RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+    RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
+    RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9; // 8/2*9=36MHz
+    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
     {
-        cnt_1ms = HAL_GetTick();
-        uds_1ms_task();
-
-        // LED flashing
-        if(led_cnt++ > 250)
-        {
-          HAL_IWDG_Refresh(&hiwdg);  // Watch dog 500ms timeout
-        	led_cnt = 0;
-        	 HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin); // LED flashing
+        // 时钟配置失败：LED快闪（区别于HAL_Init失败）
+        while(1) {
+            LED_PORT->ODR ^= LED_PIN;
+            for(uint32_t i=0; i<50000; i++);
         }
     }
-  }
-  /* USER CODE END 3 */
+
+    // 2.2 配置总线时钟（AHB/APB）
+    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+    RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2; // APB1=18MHz
+    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1; // APB2=36MHz
+    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+    {
+        while(1) {
+            LED_PORT->ODR ^= LED_PIN;
+            for(uint32_t i=0; i<50000; i++);
+        }
+    }
+
+    /************************ 3. 重映射向量表（时钟稳定后） ************************/
+    SCB->VTOR = 0x8008000U; // 向量表重映射到APP地址
+    __DSB();
+    __ISB();
+
+    /************************ 4. 关闭全局中断（初始化HAL前） ************************/
+    __disable_irq();
+
+    /************************ 5. 初始化HAL库（此时时钟/SysTick已就绪） ************************/
+    if(HAL_Init() != HAL_OK) {
+        // HAL_Init失败：LED快闪（此时时钟已配置，可改用HAL_Delay）
+        while(1) {
+            HAL_GPIO_TogglePin(LED_PORT, LED_PIN);
+            HAL_Delay(1000); // 用HAL_Delay，避免裸机循环值过小导致闪烁看不清
+        }
+    }
+
+    /************************ 6. 开启全局中断+后续初始化 ************************/
+    __enable_irq();
+    // MX_GPIO_Init();
+    // MX_USART2_UART_Init(); // LIN初始化
+
+    /************************ 7. 业务逻辑 ************************/
+    while (1)
+    {
+        HAL_GPIO_TogglePin(LED_PORT, LED_PIN);
+        HAL_Delay(30);
+    }
 }
 
 /**
@@ -208,3 +230,20 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+
+// 第二步：重写HAL_InitTick（适配36MHz时钟，必须！）
+HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
+{
+    // 36MHz系统时钟 → SysTick重载值=36000（1ms中断）
+    if (HAL_SYSTICK_Config(SystemCoreClock / 1000) != HAL_OK)
+    {
+        return HAL_ERROR;
+    }
+    // 设置SysTick优先级（HAL库默认）
+    if (TickPriority < (1UL << __NVIC_PRIO_BITS))
+    {
+        HAL_NVIC_SetPriority(SysTick_IRQn, TickPriority, 0U);
+        return HAL_OK;
+    }
+    return HAL_ERROR;
+}
