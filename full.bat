@@ -4,10 +4,10 @@ Rem Path to the executable exe of the Vector HexView tool on your PC
 set "HexViewPath=D:\sandbox\01_tools\HexView\HexView\hexview.exe"
 
 Rem Filled input file Input_Hex_File
-set "Input_Hex_File=D:\03_project\stm32\f103\01_code\FBL\stm32_Bootload_UDS\build\Debug\a.hex"  
+set "Input_Hex_File=D:\03_project\stm32\f103\01_code\APP\stm32f103_APP\stm32_Bootload_UDS\build\Debug\a.hex"  
 
 Rem The output file Output_Hex_File after filling
-set "Output_Hex_File=D:\03_project\stm32\f103\01_code\FBL\stm32_Bootload_UDS\build\Debug\a.hex"
+set "Output_Hex_File=D:\03_project\stm32\f103\01_code\APP\stm32f103_APP\stm32_Bootload_UDS\build\Debug\a.hex"
 
 echo Filling the hex file to 32K...
 

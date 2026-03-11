@@ -32,7 +32,7 @@
 MEMORY
 {
   RAM    (xrw)    : ORIGIN = 0x20002000,   LENGTH = 16K
-  FLASH    (rx)    : ORIGIN = 0x8008000,   LENGTH = 32K
+  FLASH    (rx)    : ORIGIN = 0x800C000,   LENGTH = 400K
 }
 
 /* Entry Point */
@@ -213,6 +213,11 @@ SECTIONS
     . = . + _Min_Stack_Size;
     . = ALIGN(8);
   } >RAM
+
+   .app_version 0x0801FFFC:
+  {
+    KEEP(*(.app_version)) 
+  } > FLASH
 
   /* Remove information from the compiler libraries */
   /DISCARD/ :
