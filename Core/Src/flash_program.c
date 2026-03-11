@@ -2,7 +2,7 @@
 #include "iwdg.h"
 
 
-const uint32_t fbl_version __attribute__((section(".fbl_version"))) = 0x20260301; // v1.0
+const uint32_t app_version __attribute__((section(".app_version"))) = 0x20260301; // v1.0
 
 /******************************************************************************
 * 函数名称: HAL_StatusTypeDef flash_write_data(uint32_t addr, const uint8_t* data, uint16_t len)
