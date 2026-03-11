@@ -30,6 +30,7 @@
 #include "boot_jump.h"
 #include "uds_port.h"
 #include "uds_service.h"
+#include "flash_program.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -100,8 +101,13 @@ int main(void)
   MX_CAN_Init();
   uint8_t key[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};  // Example key (should be securely stored and managed in production)
   uart_print_hex(key, 16, "Computed MAC: ");
-  Boot_JumpToApplication();  // Jump to application if valid application exists
+  if(*(uint32_t *)APP_VALID_FLAG_ADDR == 0x5A5A5A5A)
+  {
+    Boot_JumpToApplication();  // Jump to application if valid application exists
+  }
 
+  key[0] = 0xfb;
+  uart_print_hex(key, 16, "Computed MAC: ");
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
   uds_init();

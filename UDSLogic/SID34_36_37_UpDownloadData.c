@@ -8,7 +8,7 @@
 
 #define DOWNLOAD    1
 #define UPLOAD      2
-#define maxNumberOfBlockLength 1022
+#define maxNumberOfBlockLength 1020
 uint8_t UpDownLoadReq = 0;
 uint8_t encryptingMethod =0;
 uint8_t compressionMethod =0;

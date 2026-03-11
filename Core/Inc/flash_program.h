@@ -5,7 +5,7 @@
 #include "stm32f1xx_hal.h"
 
 
-#define FBL_VERSION_ADDR    0x08007FF0  // FBL版本号地址
+#define FBL_VERSION_ADDR    0x08007FFC  // FBL版本号地址
 #define APP_VERSION_ADDR    0x0801FFFC  // APP版本号地址
 #define APP_VALID_FLAG_ADDR 0x0800A000  // APP有效标志地址
 #define FLASH_BASE_ADDR     0x08000000  // STM32 Flash起始地址
