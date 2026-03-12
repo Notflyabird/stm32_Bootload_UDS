@@ -4,9 +4,17 @@
 #include "can.h"
 
 /* USER CODE BEGIN 0 */
+#include "stm32f103xe.h"
+#include "stm32f1xx_hal.h"
 #include "usart.h"
 #include "uds_port.h"
 #include "uds_service.h"
+
+uint32_t rx_id=0;       // Received ID
+uint32_t tx_id=0;       // Reply ID (rx_id + 1)
+uint8_t rx_data[8];   // Receive data buffer
+uint8_t rx_len=0;       // Receive data length
+
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
@@ -177,14 +185,10 @@ if (HAL_CAN_AddTxMessage(&hcan, &TxHeader, data, &TxMailbox) != HAL_OK)
 }
 }
 
+
+
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-  uint32_t rx_id;       // Received ID
-  uint32_t tx_id;       // Reply ID (rx_id + 1)
-  uint8_t rx_data[8];   // Receive data buffer
-  uint8_t rx_len;       // Receive data length
-  
-  // 1. Read received data
   if(CAN_Receive_Message(&rx_id, rx_data, &rx_len) != 1)
   {
     return; // reception failed, return directly
@@ -202,4 +206,20 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   // Add error handling for failed transmission here if needed (e.g., retry), can be ignored in simplified scenarios
 }
 
+
+uint8_t can_start_check(void)
+{
+  uint8_t times = 5u;
+  uint8_t Status = 0;
+  while (times--)
+  {
+    HAL_Delay(1);
+    if(rx_data[0] == 0x02 && rx_data[1] == 0x10 && rx_data[2] == 0x02) // Example data check
+    {
+      return Status = 1; // Condition met, set result to success
+      break;
+    }
+  }
+  return  Status;
+}
 /* USER CODE END 1 */

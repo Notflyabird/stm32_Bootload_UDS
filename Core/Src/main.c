@@ -75,7 +75,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  uint8_t key[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};  // Example key (should be securely stored and managed in production)
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -99,18 +99,23 @@ int main(void)
   MX_DMA_Init();
   MX_USART1_UART_Init();
   MX_CAN_Init();
-  uint8_t key[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};  // Example key (should be securely stored and managed in production)
-  uart_print_hex(key, 16, "Computed MAC: ");
-  if(*(uint32_t *)APP_VALID_FLAG_ADDR == 0x5A5A5A5A)
-  {
-    Boot_JumpToApplication();  // Jump to application if valid application exists
-  }
-
-  key[0] = 0xfb;
-  uart_print_hex(key, 16, "Computed MAC: ");
-  MX_IWDG_Init();
-  /* USER CODE BEGIN 2 */
   uds_init();
+  if(can_start_check()==0)
+  {
+    uart_print_hex(key, 16, "CAN Check Failed: ");
+    if(*(uint32_t *)APP_VALID_FLAG_ADDR == 0x5A5A5A5A)
+    {
+      Boot_JumpToApplication();  // Jump to application if valid application exists
+    }
+  }
+  else
+  {
+    uart_print_hex(key, 16, "CAN Check Passed: ");
+  } 
+  MX_IWDG_Init();
+
+  /* USER CODE BEGIN 2 */
+
 
   /* USER CODE END 2 */
 
@@ -127,7 +132,6 @@ int main(void)
     {
         cnt_1ms = HAL_GetTick();
         uds_1ms_task();
-
         // LED flashing
         if(led_cnt++ > 250)
         {

@@ -25,7 +25,7 @@ void MX_CAN_Init(void);
 void CAN_Filter_Config(void);
 uint8_t CAN_Send_Message(uint32_t id, uint8_t *data, uint8_t len);
 uint8_t CAN_Receive_Message(uint32_t *id, uint8_t *data, uint8_t *len);
-
+extern uint8_t can_start_check(void);
 /* USER CODE END Prototypes */
 
 
