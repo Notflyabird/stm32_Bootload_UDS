@@ -56,7 +56,7 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+uint8_t key[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};  // Example key (should be securely stored and managed in production)
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -145,14 +145,34 @@ int main(void)
 
     /************************ 6. 开启全局中断+后续初始化 ************************/
     __enable_irq();
+
+    MX_GPIO_Init();
+    MX_DMA_Init();
+    MX_USART1_UART_Init();
+    MX_CAN_Init();
+    uds_init();
+    uart_print_hex(key, 16, "enter app: ");
+    MX_IWDG_Init();
     // MX_GPIO_Init();
     // MX_USART2_UART_Init(); // LIN初始化
 
     /************************ 7. 业务逻辑 ************************/
     while (1)
     {
-        HAL_GPIO_TogglePin(LED_PORT, LED_PIN);
-        HAL_Delay(30);
+    static uint32_t cnt_1ms;
+    static uint32_t led_cnt;
+    if(HAL_GetTick() >= cnt_1ms + 1)
+    {
+        cnt_1ms = HAL_GetTick();
+        uds_1ms_task();
+        // LED flashing
+        if(led_cnt++ > 100)
+        {
+          HAL_IWDG_Refresh(&hiwdg);  // Watch dog 500ms timeout
+        	led_cnt = 0;
+        	 HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin); // LED flashing
+        }
+    }
     }
 }
 
