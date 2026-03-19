@@ -56,7 +56,7 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-uint8_t key[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};  // Example key (should be securely stored and managed in production)
+uint8_t key[16] = {0xFF, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};  // Example key (should be securely stored and managed in production)
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -86,46 +86,7 @@ void BareMetal_LED_Init(void) {
 int main(void)
 {
 
-   /************************ 1. 裸机LED初始化（证明跳转成功） ************************/
-    BareMetal_LED_Init(); // 先亮LED，确认跳转到APP
-    // （删除多余的ODR翻转，避免干扰状态判断）
-
-    /************************ 2. 先初始化系统时钟（HAL_Init的前提！） ************************/
-    // 关键：HAL_Init依赖SystemCoreClock，必须先配置时钟为36MHz HSI
-    RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-    RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-
-    // 2.1 启用HSI 8MHz并配置PLL→36MHz
-    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-    RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-    RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
-    RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9; // 8/2*9=36MHz
-    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-    {
-        // 时钟配置失败：LED快闪（区别于HAL_Init失败）
-        while(1) {
-            LED_PORT->ODR ^= LED_PIN;
-            for(uint32_t i=0; i<50000; i++);
-        }
-    }
-
-    // 2.2 配置总线时钟（AHB/APB）
-    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-    RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2; // APB1=18MHz
-    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1; // APB2=36MHz
-    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
-    {
-        while(1) {
-            LED_PORT->ODR ^= LED_PIN;
-            for(uint32_t i=0; i<50000; i++);
-        }
-    }
-
+    SystemClock_Config();
     /************************ 3. 重映射向量表（时钟稳定后） ************************/
     SCB->VTOR = 0x800C000; // 向量表重映射到APP地址
     __DSB();
@@ -135,13 +96,7 @@ int main(void)
     __disable_irq();
 
     /************************ 5. 初始化HAL库（此时时钟/SysTick已就绪） ************************/
-    if(HAL_Init() != HAL_OK) {
-        // HAL_Init失败：LED快闪（此时时钟已配置，可改用HAL_Delay）
-        while(1) {
-            HAL_GPIO_TogglePin(LED_PORT, LED_PIN);
-            HAL_Delay(1000); // 用HAL_Delay，避免裸机循环值过小导致闪烁看不清
-        }
-    }
+    HAL_Init();
 
     /************************ 6. 开启全局中断+后续初始化 ************************/
     __enable_irq();
@@ -153,8 +108,6 @@ int main(void)
     uds_init();
     uart_print_hex(key, 16, "enter app: ");
     MX_IWDG_Init();
-    // MX_GPIO_Init();
-    // MX_USART2_UART_Init(); // LIN初始化
 
     /************************ 7. 业务逻辑 ************************/
     while (1)
@@ -166,7 +119,7 @@ int main(void)
         cnt_1ms = HAL_GetTick();
         uds_1ms_task();
         // LED flashing
-        if(led_cnt++ > 100)
+        if(led_cnt++ > 250)
         {
           HAL_IWDG_Refresh(&hiwdg);  // Watch dog 500ms timeout
         	led_cnt = 0;
