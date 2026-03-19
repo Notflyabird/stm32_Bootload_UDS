@@ -56,7 +56,7 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-uint8_t key[16] = {0xFF, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};  // Example key (should be securely stored and managed in production)
+uint8_t key[16] = {0xFD, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};  // Example key (should be securely stored and managed in production)
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -108,7 +108,6 @@ int main(void)
     uds_init();
     uart_print_hex(key, 16, "enter app: ");
     MX_IWDG_Init();
-
     /************************ 7. 业务逻辑 ************************/
     while (1)
     {
@@ -119,8 +118,9 @@ int main(void)
         cnt_1ms = HAL_GetTick();
         uds_1ms_task();
         // LED flashing
-        if(led_cnt++ > 250)
+        if(led_cnt++ > 100)
         {
+          UDS_SESSION_PROG_reset_back_fbl(); // 编程会话重置后返回Bootloader（每1ms检查一次标志位）
           HAL_IWDG_Refresh(&hiwdg);  // Watch dog 500ms timeout
         	led_cnt = 0;
         	 HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin); // LED flashing

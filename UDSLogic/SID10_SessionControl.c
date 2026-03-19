@@ -11,7 +11,7 @@
 // 诊断会话状态
 static uds_session_t uds_session = UDS_SESSION_STD;
 
-
+uint8_t reset_back_fbl=0; // 当前安全访问级别（全局变量，其他服务可访问）
 /******************************************************************************
 * 函数名称: void set_current_session(uds_session_t session)
 * 功能说明: 设置当前诊断会话状态
@@ -95,6 +95,7 @@ void service_10_SessionControl(const uint8_t* msg_buf, uint16_t msg_dlc)
 			set_current_sa_lv(UDS_SA_NON);
 			uds_positive_rsp(rsp_buf, 6);
             uds_timer_start(UDS_TIMER_S3server);
+			reset_back_fbl=1;
 			break;
 
         case UDS_SESSION_EXT:		// 扩展会话
@@ -107,6 +108,16 @@ void service_10_SessionControl(const uint8_t* msg_buf, uint16_t msg_dlc)
 		default:
 			uds_negative_rsp(SID_10, NRC_SUBFUNCTION_NOT_SUPPORTED);
 			break;
+	}
+}
+
+
+void UDS_SESSION_PROG_reset_back_fbl(void)
+{
+	if(reset_back_fbl== 1) {
+	reset_back_fbl=0;
+	*(uint32_t *)BACK_TO_BOOT_FLAG_ADDR = BACK_TO_BOOT_FLAG;
+	NVIC_SystemReset();
 	}
 }
 

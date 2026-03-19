@@ -2,8 +2,10 @@
 #define _SID2E_SESSION_CONTROL_H_
 
 #include <stdint.h>
+#include "stm32f103xe.h"
 #include "uds_type.h"
 #include "uds_service.h"
+#include "boot_jump.h"
 
 /******************************************************************************
 * 函数名称: void service_10_SessionControl(const uint8_t* msg_buf, uint16_t msg_dlc)
@@ -49,6 +51,8 @@ void set_current_session(uds_session_t session);
 ******************************************************************************/
 uds_session_t get_current_session(void);
 
+
+extern void UDS_SESSION_PROG_reset_back_fbl(void); // 编程会话重置后返回Bootloader（全局函数，其他服务可调用）
 
 #endif
 /****************EOF****************/
