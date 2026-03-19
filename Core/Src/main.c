@@ -100,18 +100,27 @@ int main(void)
   MX_USART1_UART_Init();
   MX_CAN_Init();
   uds_init();
-  if(can_start_check()==0)
+  if (check_app_set_flag() == 1) // Clear flag if set, to avoid unintended jumps in future resets
   {
-    uart_print_hex(key, 16, "CAN Check Failed: ");
-    if(*(uint32_t *)APP_VALID_FLAG_ADDR == 0x5A5A5A5A)
-    {
-      Boot_JumpToApplication();  // Jump to application if valid application exists
-    }
+    uart_print_hex(BACK_TO_BOOT_FLAG_ADDR, 16, "staty FBL"); // FBL
+    *(uint32_t *)BACK_TO_BOOT_FLAG_ADDR = 0x00000000;
   }
   else
   {
-    uart_print_hex(key, 16, "CAN Check Passed: ");
-  } 
+    if (can_start_check() == 0)
+    {
+      uart_print_hex(key, 16, "CAN Check Failed: ");
+      if (*(uint32_t *)APP_VALID_FLAG_ADDR == 0x5A5A5A5A)
+      {
+        Boot_JumpToApplication(); // Jump to application if valid application exists
+      }
+    }
+    else
+    {
+      uart_print_hex(key, 16, "CAN Check Passed: ");
+    }
+  }
+
   MX_IWDG_Init();
 
   /* USER CODE BEGIN 2 */

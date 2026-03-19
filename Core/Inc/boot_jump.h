@@ -8,8 +8,16 @@
 // 应用程序起始地址（与链接脚本中的FLASH起始地址一致）
 #define APPLICATION_ADDRESS 0x0800C000
 
+#define BACK_TO_BOOT_FLAG_ADDR    (0x20000FFC)
+#define BACK_TO_BOOT_FLAG         (0xABCD1234)
+
 // 函数指针类型定义（用于指向应用程序的复位向量）
 typedef void (*pFunction)(void);
 void Boot_JumpToApplication(void);
+extern uint8_t check_app_set_flag(void);
 
-#endif  
+
+
+#endif
+
+

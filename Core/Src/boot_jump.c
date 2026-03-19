@@ -44,4 +44,12 @@ void Boot_JumpToApplication(void)
         Jump_To_Application();
     }
 }
-    
+
+uint8_t check_app_set_flag(void)
+{
+    if(*(uint32_t *)BACK_TO_BOOT_FLAG_ADDR == BACK_TO_BOOT_FLAG)
+    {
+        return 1; // Flag is set, indicate to jump to bootloader
+    }
+    return 0; // Flag not set, normal operation
+}
